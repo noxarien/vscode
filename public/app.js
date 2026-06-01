@@ -47,8 +47,8 @@ function presenceDetails(type) {
 }
 
 function setLoading() {
-  gamesGrid.innerHTML = Array.from({ length: 8 }, () => `<article class="game-card skeleton"></article>`).join("");
-  peopleGrid.innerHTML = Array.from({ length: 8 }, () => `<article class="person-card skeleton"></article>`).join("");
+  gamesGrid.innerHTML = Array.from({ length: 12 }, () => `<article class="game-card skeleton"></article>`).join("");
+  peopleGrid.innerHTML = Array.from({ length: 9 }, () => `<article class="person-card skeleton"></article>`).join("");
 }
 
 function pluralize(count, singular, plural = `${singular}s`) {
