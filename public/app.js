@@ -51,17 +51,35 @@ function setLoading() {
   peopleGrid.innerHTML = Array.from({ length: 8 }, () => `<article class="person-card skeleton"></article>`).join("");
 }
 
-function activeTeamMarkup(staff) {
-  if (!staff.length) {
-    return `<em>No team members in this game right now</em>`;
+function pluralize(count, singular, plural = `${singular}s`) {
+  return count === 1 ? singular : plural;
+}
+
+function activeTeamMarkup(game) {
+  const staff = game.activeStaff || [];
+  const playing = Number(game.playing || 0);
+
+  if (!staff.length && playing > 0) {
+    return `<em>${numberFormatter.format(playing)} ${pluralize(playing, "person", "people")} playing right now. Roblox is not showing which tracked staff member it is.</em>`;
   }
 
-  return staff.map((person) => `
+  if (!staff.length) {
+    return `<em>No tracked team members confirmed here right now</em>`;
+  }
+
+  const staffMarkup = staff.map((person) => `
     <a href="${person.profileUrl}" target="_blank" rel="noreferrer" title="${person.name} · ${person.role}">
       <img src="${person.avatarUrl}" alt="${person.name}">
       <span>${person.name}</span>
     </a>
   `).join("");
+
+  if (playing > staff.length) {
+    const extraPlayers = playing - staff.length;
+    return `${staffMarkup}<em>+ ${numberFormatter.format(extraPlayers)} other ${pluralize(extraPlayers, "player")} in this game</em>`;
+  }
+
+  return staffMarkup;
 }
 
 function renderGames(games) {
@@ -84,7 +102,7 @@ function renderGames(games) {
       : "<strong>Unknown</strong><span>No date returned</span>";
     node.querySelector(".max-players").textContent = game.maxPlayers ? numberFormatter.format(game.maxPlayers) : "Unknown";
     node.querySelector(".visits").textContent = numberFormatter.format(game.visits || 0);
-    node.querySelector(".active-team-list").innerHTML = activeTeamMarkup(game.activeStaff || []);
+    node.querySelector(".active-team-list").innerHTML = activeTeamMarkup(game);
     node.querySelector(".open-link").href = game.url;
     gamesGrid.append(node);
   });
@@ -101,13 +119,7 @@ function renderPeople(staff) {
     image.alt = `${person.name} Roblox avatar`;
     node.querySelector("h3").textContent = person.name;
     node.querySelector(".role").textContent = `${person.role} · @${person.robloxName}`;
-    node.querySelector(".location").textContent = person.presenceType === 2
-      ? `Playing ${person.activeGameName || person.lastLocation || "Roblox"}`
-      : person.presenceType === 3
-        ? "Working in Roblox Studio"
-        : person.presenceType === 1
-          ? "Online on Roblox"
-          : "Offline";
+    node.querySelector(".location").textContent = person.locationDetail || "Offline";
     const badge = node.querySelector(".presence-badge");
     badge.textContent = presence.label;
     badge.classList.add(presence.className);
