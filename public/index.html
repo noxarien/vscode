@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FRI Live Status</title>
+    <link rel="preconnect" href="https://tr.rbxcdn.com">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="FRI Live Status">
+          <span class="brand-mark">F</span>
+          <span>
+            <strong>FRI Live Status</strong>
+            <small>Roblox operations board</small>
+          </span>
+        </a>
+        <div class="status-strip">
+          <span class="live-dot"></span>
+          <span id="refreshLabel">Syncing Roblox</span>
+        </div>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div>
+            <p class="eyebrow">Current network activity</p>
+            <h1>Games, people, and Studio presence.</h1>
+          </div>
+          <div class="hero-metrics" aria-live="polite">
+            <div>
+              <span id="totalPlaying">--</span>
+              <small>players online</small>
+            </div>
+            <div>
+              <span id="studioCount">--</span>
+              <small>in Studio</small>
+            </div>
+            <div>
+              <span id="onlineCount">--</span>
+              <small>online staff</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-header">
+          <div>
+            <p class="eyebrow">Experiences</p>
+            <h2>Live Roblox Games</h2>
+          </div>
+          <button class="refresh-button" id="refreshButton" type="button">Refresh</button>
+        </section>
+        <section class="game-grid" id="gamesGrid" aria-live="polite"></section>
+
+        <section class="section-header people-header">
+          <div>
+            <p class="eyebrow">Team</p>
+            <h2>Developer Presence</h2>
+          </div>
+        </section>
+        <section class="people-grid" id="peopleGrid" aria-live="polite"></section>
+      </main>
+    </div>
+
+    <template id="gameTemplate">
+      <article class="game-card">
+        <div class="game-media">
+          <img alt="" width="512" height="512">
+          <span class="game-index"></span>
+        </div>
+        <div class="game-body">
+          <div class="game-topline">
+            <span class="player-pill"><strong></strong> online</span>
+          </div>
+          <h3></h3>
+          <p class="roblox-name"></p>
+          <div class="active-team">
+            <span>Team here</span>
+            <div class="active-team-list"></div>
+          </div>
+          <dl class="game-meta">
+            <div>
+              <dt>Last updated</dt>
+              <dd class="updated"></dd>
+            </div>
+            <div>
+              <dt>Max server</dt>
+              <dd class="max-players"></dd>
+            </div>
+            <div>
+              <dt>Visits</dt>
+              <dd class="visits"></dd>
+            </div>
+          </dl>
+          <a class="open-link" target="_blank" rel="noreferrer">Open on Roblox</a>
+        </div>
+      </article>
+    </template>
+
+    <template id="personTemplate">
+      <article class="person-card">
+        <img alt="" width="72" height="72">
+        <div class="person-main">
+          <div class="person-title">
+            <h3></h3>
+            <span class="presence-badge"></span>
+          </div>
+          <p class="role"></p>
+          <p class="location"></p>
+          <a target="_blank" rel="noreferrer">View profile</a>
+        </div>
+      </article>
+    </template>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
