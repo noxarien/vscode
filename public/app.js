@@ -17,6 +17,14 @@ const timelineClose = document.querySelector("#timelineClose");
 const deployedApiOrigin = "https://vscode-mocha.vercel.app";
 let latestGames = [];
 let latestPeople = [];
+let activeStudioUserId = null;
+let activeStudioRange = "1d";
+
+const studioRanges = {
+  "1h": 60 * 60 * 1000,
+  "1d": 24 * 60 * 60 * 1000,
+  "1w": 7 * 24 * 60 * 60 * 1000
+};
 
 const numberFormatter = new Intl.NumberFormat();
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -33,6 +41,9 @@ const shortDateFormatter = new Intl.DateTimeFormat(undefined, {
 const shortTimeFormatter = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit"
+});
+const weekdayFormatter = new Intl.DateTimeFormat(undefined, {
+  weekday: "short"
 });
 
 const relativeFormatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
@@ -265,9 +276,9 @@ function currentStudioDuration(person) {
   return studioEntry ? elapsedLabel(studioEntry.startedAt) : "Not in Studio";
 }
 
-function buildStudioSegments(timeline) {
+function buildStudioSegments(timeline, rangeKey) {
   const now = Date.now();
-  const windowStart = now - 24 * 60 * 60 * 1000;
+  const windowStart = now - studioRanges[rangeKey];
   const sourceEntries = timeline.length
     ? timeline
     : [{ presenceType: 0, startedAt: new Date(windowStart).toISOString(), endedAt: new Date(now).toISOString() }];
@@ -282,25 +293,34 @@ function buildStudioSegments(timeline) {
 
     const left = ((start - windowStart) / (now - windowStart)) * 100;
     const width = Math.max(((end - start) / (now - windowStart)) * 100, 0.8);
+    const visibleLeft = Math.min(left, 100 - width);
     const className = entry.presenceType === 3 ? "studio-on" : "studio-off";
     const label = entry.presenceType === 3 ? "In Studio" : "Not in Studio";
 
-    return `<span class="${className}" style="left:${left}%;width:${width}%;" title="${label} · ${elapsedLabel(entry.startedAt, entry.endedAt || new Date().toISOString())}"></span>`;
+    return `<span class="${className}" style="left:${visibleLeft}%;width:${width}%;" title="${label} · ${elapsedLabel(entry.startedAt, entry.endedAt || new Date().toISOString())}"></span>`;
   }).join("");
 }
 
-function studioTicks() {
+function studioTicks(rangeKey) {
   const now = Date.now();
-  const start = now - 24 * 60 * 60 * 1000;
+  const start = now - studioRanges[rangeKey];
   const offsets = [0, 0.25, 0.5, 0.75, 1];
 
   return offsets.map((offset) => {
     const date = new Date(start + (now - start) * offset);
+    if (rangeKey === "1h") {
+      return `<span><b>${shortTimeFormatter.format(date)}</b><b>${offset === 1 ? "Now" : "Today"}</b></span>`;
+    }
+
+    if (rangeKey === "1w") {
+      return `<span><b>${shortDateFormatter.format(date)}</b><b>${weekdayFormatter.format(date)}</b></span>`;
+    }
+
     return `<span><b>${shortDateFormatter.format(date)}</b><b>${shortTimeFormatter.format(date)}</b></span>`;
   }).join("");
 }
 
-function studioTrackerMarkup(person) {
+function studioTrackerMarkup(person, rangeKey = activeStudioRange) {
   const presence = presenceDetails(person.presenceType);
   const timeline = person.timeline || [];
 
@@ -320,9 +340,9 @@ function studioTrackerMarkup(person) {
           <span>Last online ${lastOnlineLabel(person)}</span>
         </div>
         <div class="range-toggle" aria-label="Timeline range">
-          <span>1h</span>
-          <strong>1d</strong>
-          <span>1w</span>
+          ${Object.keys(studioRanges).map((key) => `
+            <button type="button" data-studio-range="${key}" aria-pressed="${key === rangeKey}">${key}</button>
+          `).join("")}
         </div>
       </div>
       <div class="studio-stat-grid">
@@ -334,9 +354,9 @@ function studioTrackerMarkup(person) {
         <h3>Status timeline</h3>
         <div class="studio-chart-surface" aria-label="Yellow means in Studio, gray means not in Studio">
           <div class="studio-bar">
-            <div class="studio-bar-track">${buildStudioSegments(timeline)}</div>
+            <div class="studio-bar-track">${buildStudioSegments(timeline, rangeKey)}</div>
           </div>
-          <div class="studio-ticks">${studioTicks()}</div>
+          <div class="studio-ticks">${studioTicks(rangeKey)}</div>
         </div>
       </div>
       <div class="studio-events">
@@ -367,11 +387,13 @@ function openPersonTimeline(userId) {
   const person = latestPeople.find((entry) => String(entry.userId) === String(userId));
   if (!person) return;
 
+  activeStudioUserId = person.userId;
+  activeStudioRange = "1d";
   timelineDialog.classList.add("studio-dialog");
   timelineEyebrow.textContent = "Studio tracker";
   timelineTitle.textContent = person.displayName || person.name;
   timelineSubtitle.textContent = statusLine(person);
-  timelineList.innerHTML = studioTrackerMarkup(person);
+  timelineList.innerHTML = studioTrackerMarkup(person, activeStudioRange);
   timelineDialog.showModal();
 }
 
@@ -447,6 +469,16 @@ async function loadDashboard({ showSkeleton = false } = {}) {
 refreshButton.addEventListener("click", () => loadDashboard());
 timelineClose.addEventListener("click", () => timelineDialog.close());
 timelineDialog.addEventListener("click", (event) => {
+  const rangeButton = event.target.closest("[data-studio-range]");
+  if (rangeButton) {
+    const person = latestPeople.find((entry) => String(entry.userId) === String(activeStudioUserId));
+    if (person && studioRanges[rangeButton.dataset.studioRange]) {
+      activeStudioRange = rangeButton.dataset.studioRange;
+      timelineList.innerHTML = studioTrackerMarkup(person, activeStudioRange);
+    }
+    return;
+  }
+
   if (event.target === timelineDialog) {
     timelineDialog.close();
   }

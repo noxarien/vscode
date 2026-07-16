@@ -1393,6 +1393,57 @@ h2 {
   padding-top: 4px;
 }
 
+.range-toggle {
+  gap: 2px;
+  padding: 3px;
+  border-color: #303238;
+  border-radius: 7px;
+  background: #0b0c0e;
+}
+
+.range-toggle button {
+  position: relative;
+  min-width: 44px;
+  min-height: 34px;
+  padding: 0 10px 2px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #777e8b;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.range-toggle button:hover {
+  background: #17191d;
+  color: #d8dce3;
+}
+
+.range-toggle button[aria-pressed="true"] {
+  background: #202125;
+  color: #fff;
+}
+
+.range-toggle button[aria-pressed="true"]::after {
+  position: absolute;
+  right: 9px;
+  bottom: 4px;
+  left: 9px;
+  height: 2px;
+  border-radius: 2px;
+  background: #f8a800;
+  content: "";
+}
+
+.studio-chart-surface {
+  background:
+    linear-gradient(to right, transparent calc(25% - 1px), #1b1d20 25%, transparent calc(25% + 1px)),
+    linear-gradient(to right, transparent calc(50% - 1px), #1b1d20 50%, transparent calc(50% + 1px)),
+    linear-gradient(to right, transparent calc(75% - 1px), #1b1d20 75%, transparent calc(75% + 1px)),
+    #0b0c0e;
+}
+
 @media (max-width: 900px) {
   .people-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1490,6 +1541,11 @@ h2 {
   .studio-ticks {
     gap: 4px;
     font-size: 0.62rem;
+  }
+
+  .studio-ticks span:nth-child(2),
+  .studio-ticks span:nth-child(4) {
+    visibility: hidden;
   }
 
   .person-timeline-entry {
