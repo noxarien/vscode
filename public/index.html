@@ -64,8 +64,22 @@
       </main>
     </div>
 
+    <dialog class="timeline-dialog" id="timelineDialog" aria-labelledby="timelineTitle">
+      <div class="timeline-panel">
+        <header class="timeline-header">
+          <div>
+            <p class="eyebrow">Observed game timeline</p>
+            <h2 id="timelineTitle">Game timeline</h2>
+            <p id="timelineSubtitle"></p>
+          </div>
+          <button class="icon-button" id="timelineClose" type="button" aria-label="Close timeline">x</button>
+        </header>
+        <div class="timeline-list" id="timelineList"></div>
+      </div>
+    </dialog>
+
     <template id="gameTemplate">
-      <article class="game-card">
+      <article class="game-card" tabindex="0" role="button" aria-label="Open game timeline">
         <div class="game-media">
           <img alt="" width="512" height="512">
           <span class="game-index"></span>
@@ -80,6 +94,7 @@
             <span>Support here</span>
             <div class="active-team-list"></div>
           </div>
+          <p class="timeline-hint">Click for timeline</p>
           <dl class="game-meta">
             <div>
               <dt>Last updated</dt>

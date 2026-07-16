@@ -200,7 +200,8 @@ h2 {
 
 .refresh-button,
 .open-link,
-.person-card a {
+.person-card a,
+.icon-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -218,7 +219,8 @@ h2 {
 
 .refresh-button:hover,
 .open-link:hover,
-.person-card a:hover {
+.person-card a:hover,
+.icon-button:hover {
   border-color: rgba(11, 101, 216, 0.35);
   box-shadow: 0 10px 24px rgba(11, 101, 216, 0.12);
   transform: translateY(-1px);
@@ -231,8 +233,8 @@ h2 {
 
 .game-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .game-card,
@@ -246,6 +248,7 @@ h2 {
 }
 
 .game-card:hover,
+.game-card:focus-visible,
 .person-card:hover {
   transform: translateY(-5px);
   border-color: rgba(31, 111, 209, 0.28);
@@ -255,15 +258,16 @@ h2 {
 
 .game-card {
   display: flex;
-  min-height: 430px;
+  min-height: 280px;
   flex-direction: column;
   overflow: hidden;
   padding: 0;
+  cursor: pointer;
 }
 
 .game-media {
   position: relative;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 7;
   overflow: hidden;
   background: #dfe7f0;
 }
@@ -292,7 +296,7 @@ h2 {
   display: flex;
   flex: 1;
   flex-direction: column;
-  padding: 16px;
+  padding: 13px;
 }
 
 .game-topline {
@@ -300,7 +304,7 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .game-index {
@@ -343,20 +347,21 @@ h2 {
 }
 
 .game-card h3 {
-  min-height: 44px;
-  font-size: 1.35rem;
+  min-height: 30px;
+  font-size: 1.05rem;
 }
 
 .roblox-name {
-  min-height: 38px;
-  margin-bottom: 12px;
+  min-height: 20px;
+  margin-bottom: 8px;
+  font-size: 0.84rem;
   line-height: 1.35;
 }
 
 .active-team {
-  min-height: 62px;
-  margin-bottom: 14px;
-  padding: 11px;
+  min-height: 50px;
+  margin-bottom: 8px;
+  padding: 9px;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: #f3f6fa;
@@ -364,7 +369,7 @@ h2 {
 
 .active-team > span {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 900;
@@ -382,7 +387,7 @@ h2 {
 .active-team-list a,
 .active-team-list em {
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-style: normal;
   text-decoration: none;
 }
@@ -400,15 +405,22 @@ h2 {
 }
 
 .active-team-list img {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
+}
+
+.timeline-hint {
+  margin-bottom: 8px;
+  color: var(--blue-dark);
+  font-size: 0.78rem;
+  font-weight: 900;
 }
 
 .game-meta {
   display: grid;
-  gap: 10px;
-  margin: auto 0 18px;
+  gap: 7px;
+  margin: auto 0 12px;
 }
 
 .game-meta div {
@@ -416,12 +428,12 @@ h2 {
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  padding-top: 10px;
+  padding-top: 7px;
   border-top: 1px solid var(--line);
 }
 
 .game-meta dt {
-  font-size: 0.76rem;
+  font-size: 0.7rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -429,6 +441,7 @@ h2 {
 .game-meta dd {
   margin: 0;
   text-align: right;
+  font-size: 0.82rem;
   font-weight: 800;
 }
 
@@ -436,7 +449,7 @@ h2 {
   display: block;
   margin-top: 2px;
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: 0.7rem;
   font-weight: 600;
 }
 
@@ -554,6 +567,123 @@ h2 {
   min-height: 32px;
   padding-inline: 12px;
   font-size: 0.82rem;
+}
+
+.timeline-dialog {
+  width: min(720px, calc(100% - 28px));
+  max-height: min(760px, calc(100% - 28px));
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  background: transparent;
+  color: var(--ink);
+}
+
+.timeline-dialog::backdrop {
+  background: rgba(8, 14, 26, 0.48);
+  backdrop-filter: blur(8px);
+}
+
+.timeline-panel {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(251, 252, 254, 0.98);
+  box-shadow: 0 24px 70px rgba(16, 24, 40, 0.26);
+}
+
+.timeline-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.timeline-header h2 {
+  font-size: 1.55rem;
+}
+
+.timeline-header p:last-child {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.icon-button {
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+  flex: 0 0 40px;
+  font-size: 1.05rem;
+}
+
+.timeline-list {
+  display: grid;
+  gap: 10px;
+  max-height: 560px;
+  overflow: auto;
+  padding: 16px;
+}
+
+.timeline-entry {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: white;
+}
+
+.timeline-entry img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #edf2f7;
+}
+
+.timeline-entry-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 900;
+}
+
+.timeline-entry-title a {
+  text-decoration: none;
+}
+
+.timeline-entry-title span {
+  color: var(--green);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.timeline-entry p {
+  margin: 4px 0 10px;
+  color: var(--muted);
+}
+
+.timeline-entry dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.timeline-entry dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.timeline-entry dd {
+  margin: 3px 0 0;
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .skeleton {

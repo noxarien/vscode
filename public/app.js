@@ -8,7 +8,13 @@ const refreshButton = document.querySelector("#refreshButton");
 const gameTemplate = document.querySelector("#gameTemplate");
 const personTemplate = document.querySelector("#personTemplate");
 const sectionTemplate = document.querySelector("#sectionTemplate");
+const timelineDialog = document.querySelector("#timelineDialog");
+const timelineTitle = document.querySelector("#timelineTitle");
+const timelineSubtitle = document.querySelector("#timelineSubtitle");
+const timelineList = document.querySelector("#timelineList");
+const timelineClose = document.querySelector("#timelineClose");
 const deployedApiOrigin = "https://vscode-mocha.vercel.app";
+let latestGames = [];
 
 const numberFormatter = new Intl.NumberFormat();
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -91,6 +97,26 @@ function pluralize(count, singular, plural = `${singular}s`) {
   return count === 1 ? singular : plural;
 }
 
+function elapsedLabel(startValue, endValue = new Date().toISOString()) {
+  if (!startValue) return "Unknown duration";
+
+  const start = new Date(startValue).getTime();
+  const end = new Date(endValue).getTime();
+  const totalSeconds = Math.max(0, Math.round((end - start) / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  if (minutes > 0) {
+    return `${minutes}m`;
+  }
+
+  return "Less than 1m";
+}
+
 function activeTeamMarkup(game) {
   const staff = game.activeStaff || [];
   const playing = Number(game.playing || 0);
@@ -119,6 +145,7 @@ function activeTeamMarkup(game) {
 }
 
 function renderGames(games) {
+  latestGames = games;
   gamesGrid.innerHTML = "";
 
   games.forEach((game, index) => {
@@ -140,8 +167,52 @@ function renderGames(games) {
     node.querySelector(".visits").textContent = numberFormatter.format(game.visits || 0);
     node.querySelector(".active-team-list").innerHTML = activeTeamMarkup(game);
     node.querySelector(".open-link").href = game.url;
+    node.querySelector(".timeline-hint").textContent = `${numberFormatter.format((game.timeline || []).length)} timeline ${pluralize((game.timeline || []).length, "entry", "entries")}`;
+    const card = node.querySelector(".game-card");
+    card.dataset.placeId = game.placeId;
+    card.setAttribute("aria-label", `Open ${game.displayName} timeline`);
     gamesGrid.append(node);
   });
+}
+
+function timelineEntryMarkup(entry) {
+  const started = entry.startedAt ? dateFormatter.format(new Date(entry.startedAt)) : "Unknown start";
+  const ended = entry.endedAt ? dateFormatter.format(new Date(entry.endedAt)) : "Active now";
+  const duration = elapsedLabel(entry.startedAt, entry.endedAt || new Date().toISOString());
+  const status = entry.endedAt ? "Ended" : "Active";
+
+  return `
+    <article class="timeline-entry">
+      <img src="${entry.avatarUrl}" alt="${entry.name} Roblox avatar" width="44" height="44">
+      <div>
+        <div class="timeline-entry-title">
+          <a href="${entry.profileUrl}" target="_blank" rel="noreferrer">${entry.name}</a>
+          <span>${status}</span>
+        </div>
+        <p>${entry.role}</p>
+        <dl>
+          <div><dt>Started</dt><dd>${started}</dd></div>
+          <div><dt>Ended</dt><dd>${ended}</dd></div>
+          <div><dt>Duration</dt><dd>${duration}</dd></div>
+        </dl>
+      </div>
+    </article>
+  `;
+}
+
+function openTimeline(placeId) {
+  const game = latestGames.find((entry) => String(entry.placeId) === String(placeId));
+  if (!game) return;
+
+  const timeline = [...(game.timeline || [])].reverse();
+  timelineTitle.textContent = game.displayName;
+  timelineSubtitle.textContent = timeline.length
+    ? `${numberFormatter.format(timeline.length)} observed ${pluralize(timeline.length, "visit")} since this server started tracking.`
+    : "No tracked support members have been observed in this game since this server started tracking.";
+  timelineList.innerHTML = timeline.length
+    ? timeline.map(timelineEntryMarkup).join("")
+    : `<p class="empty-state">No timeline entries yet. Entries appear when a tracked support member is observed in this game.</p>`;
+  timelineDialog.showModal();
 }
 
 function studioDurationLabel(person) {
@@ -210,5 +281,32 @@ async function loadDashboard({ showSkeleton = false } = {}) {
 }
 
 refreshButton.addEventListener("click", () => loadDashboard());
+timelineClose.addEventListener("click", () => timelineDialog.close());
+timelineDialog.addEventListener("click", (event) => {
+  if (event.target === timelineDialog) {
+    timelineDialog.close();
+  }
+});
+gamesGrid.addEventListener("click", (event) => {
+  if (event.target.closest("a")) {
+    return;
+  }
+
+  const card = event.target.closest(".game-card");
+  if (card) {
+    openTimeline(card.dataset.placeId);
+  }
+});
+gamesGrid.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest(".game-card");
+  if (card) {
+    event.preventDefault();
+    openTimeline(card.dataset.placeId);
+  }
+});
 loadDashboard({ showSkeleton: true });
 setInterval(loadDashboard, 60_000);
