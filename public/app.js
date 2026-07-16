@@ -28,7 +28,9 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 });
 const shortDateFormatter = new Intl.DateTimeFormat(undefined, {
   month: "short",
-  day: "numeric",
+  day: "numeric"
+});
+const shortTimeFormatter = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit"
 });
@@ -294,7 +296,7 @@ function studioTicks() {
 
   return offsets.map((offset) => {
     const date = new Date(start + (now - start) * offset);
-    return `<span>${shortDateFormatter.format(date)}</span>`;
+    return `<span><b>${shortDateFormatter.format(date)}</b><b>${shortTimeFormatter.format(date)}</b></span>`;
   }).join("");
 }
 
@@ -330,11 +332,12 @@ function studioTrackerMarkup(person) {
       </div>
       <div class="studio-bar-card">
         <h3>Status timeline</h3>
-        <div class="studio-bar" aria-label="Yellow means in Studio, gray means not in Studio">
-          <div class="studio-bar-track">${buildStudioSegments(timeline)}</div>
+        <div class="studio-chart-surface" aria-label="Yellow means in Studio, gray means not in Studio">
+          <div class="studio-bar">
+            <div class="studio-bar-track">${buildStudioSegments(timeline)}</div>
+          </div>
+          <div class="studio-ticks">${studioTicks()}</div>
         </div>
-        <div class="studio-ticks">${studioTicks()}</div>
-        <div class="studio-legend"><span><i class="studio-on"></i> In Studio</span><span><i class="studio-off"></i> Not in Studio</span></div>
       </div>
       <div class="studio-events">
         ${timeline.length ? timeline.slice().reverse().map(personTimelineEntryMarkup).join("") : `<p class="empty-state">No observed status history yet.</p>`}
