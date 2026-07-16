@@ -14,7 +14,7 @@
           <span class="brand-mark">F</span>
           <span>
             <strong>FRI Live Status</strong>
-            <small>Game support board</small>
+            <small>Operations board</small>
           </span>
         </a>
         <div class="status-strip">
@@ -26,8 +26,8 @@
       <main>
         <section class="hero">
           <div>
-            <p class="eyebrow">Current support activity</p>
-            <h1>FRI game support and Studio presence.</h1>
+            <p class="eyebrow">Live operations</p>
+            <h1>Games, staff, and Studio activity.</h1>
           </div>
           <div class="hero-metrics" aria-live="polite">
             <div>
@@ -48,7 +48,7 @@
         <section class="section-header">
           <div>
             <p class="eyebrow">Experiences</p>
-            <h2>Game Support Experiences</h2>
+            <h2>Tracked Experiences</h2>
           </div>
           <button class="refresh-button" id="refreshButton" type="button">Refresh</button>
         </section>
@@ -57,7 +57,7 @@
         <section class="section-header people-header">
           <div>
             <p class="eyebrow">Support team</p>
-            <h2>Roles and Studio Time</h2>
+            <h2>Team Presence</h2>
           </div>
         </section>
         <section id="peopleSections" aria-live="polite"></section>
@@ -77,6 +77,8 @@
         <div class="timeline-list" id="timelineList"></div>
       </div>
     </dialog>
+
+    <div class="timeline-tooltip" id="timelineTooltip" role="tooltip" hidden></div>
 
     <template id="gameTemplate">
       <article class="game-card" tabindex="0" role="button" aria-label="Open game timeline">
