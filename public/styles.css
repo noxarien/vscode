@@ -234,7 +234,7 @@ h2 {
 .game-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .game-card,
@@ -249,7 +249,8 @@ h2 {
 
 .game-card:hover,
 .game-card:focus-visible,
-.person-card:hover {
+.person-card:hover,
+.person-card:focus-visible {
   transform: translateY(-5px);
   border-color: rgba(31, 111, 209, 0.28);
   background: rgba(255, 255, 255, 0.96);
@@ -258,7 +259,7 @@ h2 {
 
 .game-card {
   display: flex;
-  min-height: 280px;
+  min-height: 190px;
   flex-direction: column;
   overflow: hidden;
   padding: 0;
@@ -267,7 +268,7 @@ h2 {
 
 .game-media {
   position: relative;
-  aspect-ratio: 16 / 7;
+  aspect-ratio: 16 / 5;
   overflow: hidden;
   background: #dfe7f0;
 }
@@ -296,7 +297,7 @@ h2 {
   display: flex;
   flex: 1;
   flex-direction: column;
-  padding: 13px;
+  padding: 10px;
 }
 
 .game-topline {
@@ -304,7 +305,7 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 7px;
 }
 
 .game-index {
@@ -327,8 +328,8 @@ h2 {
 .player-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 30px;
-  padding: 0 10px;
+  min-height: 26px;
+  padding: 0 8px;
   border-radius: 999px;
   background: #eef5ff;
   color: var(--blue-dark);
@@ -347,21 +348,22 @@ h2 {
 }
 
 .game-card h3 {
-  min-height: 30px;
-  font-size: 1.05rem;
+  min-height: auto;
+  margin-bottom: 4px;
+  font-size: 0.98rem;
 }
 
 .roblox-name {
-  min-height: 20px;
-  margin-bottom: 8px;
-  font-size: 0.84rem;
+  min-height: auto;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
   line-height: 1.35;
 }
 
 .active-team {
-  min-height: 50px;
-  margin-bottom: 8px;
-  padding: 9px;
+  min-height: auto;
+  margin-bottom: 6px;
+  padding: 7px;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: #f3f6fa;
@@ -369,9 +371,9 @@ h2 {
 
 .active-team > span {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -381,13 +383,13 @@ h2 {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .active-team-list a,
 .active-team-list em {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-style: normal;
   text-decoration: none;
 }
@@ -411,16 +413,14 @@ h2 {
 }
 
 .timeline-hint {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: var(--blue-dark);
   font-size: 0.78rem;
   font-weight: 900;
 }
 
 .game-meta {
-  display: grid;
-  gap: 7px;
-  margin: auto 0 12px;
+  display: none;
 }
 
 .game-meta div {
@@ -496,6 +496,7 @@ h2 {
   gap: 16px;
   min-height: 136px;
   padding: 16px;
+  cursor: pointer;
 }
 
 .person-card img {
@@ -634,6 +635,15 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 14px;
   background: white;
+}
+
+.person-timeline-entry {
+  grid-template-columns: 110px 1fr;
+  align-items: start;
+}
+
+.person-timeline-entry > .presence-badge {
+  width: fit-content;
 }
 
 .timeline-entry img {

@@ -9,12 +9,14 @@ const gameTemplate = document.querySelector("#gameTemplate");
 const personTemplate = document.querySelector("#personTemplate");
 const sectionTemplate = document.querySelector("#sectionTemplate");
 const timelineDialog = document.querySelector("#timelineDialog");
+const timelineEyebrow = document.querySelector("#timelineEyebrow");
 const timelineTitle = document.querySelector("#timelineTitle");
 const timelineSubtitle = document.querySelector("#timelineSubtitle");
 const timelineList = document.querySelector("#timelineList");
 const timelineClose = document.querySelector("#timelineClose");
 const deployedApiOrigin = "https://vscode-mocha.vercel.app";
 let latestGames = [];
+let latestPeople = [];
 
 const numberFormatter = new Intl.NumberFormat();
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -200,11 +202,37 @@ function timelineEntryMarkup(entry) {
   `;
 }
 
+function personTimelineEntryMarkup(entry) {
+  const started = entry.startedAt ? dateFormatter.format(new Date(entry.startedAt)) : "Unknown start";
+  const ended = entry.endedAt ? dateFormatter.format(new Date(entry.endedAt)) : "Active now";
+  const duration = elapsedLabel(entry.startedAt, entry.endedAt || new Date().toISOString());
+  const status = entry.endedAt ? "Ended" : "Current";
+  const presence = presenceDetails(entry.presenceType);
+
+  return `
+    <article class="timeline-entry person-timeline-entry">
+      <span class="presence-badge ${presence.className}">${entry.label}</span>
+      <div>
+        <div class="timeline-entry-title">
+          <strong>${entry.detail || entry.label}</strong>
+          <span>${status}</span>
+        </div>
+        <dl>
+          <div><dt>Started</dt><dd>${started}</dd></div>
+          <div><dt>Ended</dt><dd>${ended}</dd></div>
+          <div><dt>Duration</dt><dd>${duration}</dd></div>
+        </dl>
+      </div>
+    </article>
+  `;
+}
+
 function openTimeline(placeId) {
   const game = latestGames.find((entry) => String(entry.placeId) === String(placeId));
   if (!game) return;
 
   const timeline = [...(game.timeline || [])].reverse();
+  timelineEyebrow.textContent = "Observed game timeline";
   timelineTitle.textContent = game.displayName;
   timelineSubtitle.textContent = timeline.length
     ? `${numberFormatter.format(timeline.length)} observed ${pluralize(timeline.length, "visit")} since this server started tracking.`
@@ -212,6 +240,22 @@ function openTimeline(placeId) {
   timelineList.innerHTML = timeline.length
     ? timeline.map(timelineEntryMarkup).join("")
     : `<p class="empty-state">No timeline entries yet. Entries appear when a tracked support member is observed in this game.</p>`;
+  timelineDialog.showModal();
+}
+
+function openPersonTimeline(userId) {
+  const person = latestPeople.find((entry) => String(entry.userId) === String(userId));
+  if (!person) return;
+
+  const timeline = [...(person.timeline || [])].reverse();
+  timelineEyebrow.textContent = "Observed person timeline";
+  timelineTitle.textContent = person.displayName || person.name;
+  timelineSubtitle.textContent = timeline.length
+    ? `${person.role} · ${numberFormatter.format(timeline.length)} observed ${pluralize(timeline.length, "status change")} since this server started tracking.`
+    : `${person.role} · No observed status history yet.`;
+  timelineList.innerHTML = timeline.length
+    ? timeline.map(personTimelineEntryMarkup).join("")
+    : `<p class="empty-state">No person timeline entries yet. Entries appear when this dashboard observes online, offline, game, or Studio changes.</p>`;
   timelineDialog.showModal();
 }
 
@@ -224,6 +268,7 @@ function studioDurationLabel(person) {
 }
 
 function renderPeopleSections(sections) {
+  latestPeople = sections.flatMap((section) => section.people || []);
   peopleSections.innerHTML = "";
 
   sections.forEach((section) => {
@@ -248,6 +293,9 @@ function renderPeopleSections(sections) {
       badge.classList.add(presence.className);
       const link = node.querySelector("a");
       link.href = person.url;
+      const card = node.querySelector(".person-card");
+      card.dataset.userId = person.userId;
+      card.setAttribute("aria-label", `Open ${person.displayName || person.name} timeline`);
       grid.append(node);
     });
 
@@ -306,6 +354,27 @@ gamesGrid.addEventListener("keydown", (event) => {
   if (card) {
     event.preventDefault();
     openTimeline(card.dataset.placeId);
+  }
+});
+peopleSections.addEventListener("click", (event) => {
+  if (event.target.closest("a")) {
+    return;
+  }
+
+  const card = event.target.closest(".person-card");
+  if (card) {
+    openPersonTimeline(card.dataset.userId);
+  }
+});
+peopleSections.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest(".person-card");
+  if (card) {
+    event.preventDefault();
+    openPersonTimeline(card.dataset.userId);
   }
 });
 loadDashboard({ showSkeleton: true });

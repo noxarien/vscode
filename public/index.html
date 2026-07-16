@@ -68,7 +68,7 @@
       <div class="timeline-panel">
         <header class="timeline-header">
           <div>
-            <p class="eyebrow">Observed game timeline</p>
+            <p class="eyebrow" id="timelineEyebrow">Observed timeline</p>
             <h2 id="timelineTitle">Game timeline</h2>
             <p id="timelineSubtitle"></p>
           </div>
@@ -115,7 +115,7 @@
     </template>
 
     <template id="personTemplate">
-      <article class="person-card">
+      <article class="person-card" tabindex="0" role="button" aria-label="Open person timeline">
         <img alt="" width="72" height="72">
         <div class="person-main">
           <div class="person-title">
