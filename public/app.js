@@ -26,6 +26,12 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit"
 });
+const shortDateFormatter = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit"
+});
 
 const relativeFormatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
 const requestTimeoutMs = 12_000;
@@ -117,6 +123,12 @@ function elapsedLabel(startValue, endValue = new Date().toISOString()) {
   }
 
   return "Less than 1m";
+}
+
+function plainRelativeTime(dateValue) {
+  if (!dateValue) return "Unknown";
+
+  return relativeTime(dateValue).replace("ago", "").trim();
 }
 
 function activeTeamMarkup(game) {
@@ -227,11 +239,116 @@ function personTimelineEntryMarkup(entry) {
   `;
 }
 
+function statusLine(person) {
+  const presence = presenceDetails(person.presenceType);
+  if (person.presenceType === 3) {
+    return `${person.role} · In Studio`;
+  }
+
+  return `${person.role} · ${presence.label}`;
+}
+
+function lastOnlineLabel(person) {
+  if (person.presenceType > 0) return "Now";
+
+  const lastOnline = [...(person.timeline || [])].reverse().find((entry) => entry.presenceType > 0)?.endedAt;
+  return lastOnline ? `${plainRelativeTime(lastOnline)} ago` : "Unknown";
+}
+
+function currentStudioDuration(person) {
+  const studioEntry = [...(person.timeline || [])].reverse().find((entry) => (
+    entry.presenceType === 3 && !entry.endedAt
+  ));
+
+  return studioEntry ? elapsedLabel(studioEntry.startedAt) : "Not in Studio";
+}
+
+function buildStudioSegments(timeline) {
+  const now = Date.now();
+  const windowStart = now - 24 * 60 * 60 * 1000;
+  const sourceEntries = timeline.length
+    ? timeline
+    : [{ presenceType: 0, startedAt: new Date(windowStart).toISOString(), endedAt: new Date(now).toISOString() }];
+
+  return sourceEntries.map((entry) => {
+    const start = Math.max(new Date(entry.startedAt).getTime(), windowStart);
+    const end = Math.min(new Date(entry.endedAt || now).getTime(), now);
+
+    if (end <= windowStart || start >= now || end <= start) {
+      return "";
+    }
+
+    const left = ((start - windowStart) / (now - windowStart)) * 100;
+    const width = Math.max(((end - start) / (now - windowStart)) * 100, 0.8);
+    const className = entry.presenceType === 3 ? "studio-on" : "studio-off";
+    const label = entry.presenceType === 3 ? "In Studio" : "Not in Studio";
+
+    return `<span class="${className}" style="left:${left}%;width:${width}%;" title="${label} · ${elapsedLabel(entry.startedAt, entry.endedAt || new Date().toISOString())}"></span>`;
+  }).join("");
+}
+
+function studioTicks() {
+  const now = Date.now();
+  const start = now - 24 * 60 * 60 * 1000;
+  const offsets = [0, 0.25, 0.5, 0.75, 1];
+
+  return offsets.map((offset) => {
+    const date = new Date(start + (now - start) * offset);
+    return `<span>${shortDateFormatter.format(date)}</span>`;
+  }).join("");
+}
+
+function studioTrackerMarkup(person) {
+  const presence = presenceDetails(person.presenceType);
+  const timeline = person.timeline || [];
+
+  return `
+    <section class="studio-tracker">
+      <div class="studio-profile">
+        <img src="${person.avatarUrl}" alt="${person.displayName || person.name} Roblox avatar" width="48" height="48">
+        <div>
+          <strong>${person.displayName || person.name}</strong>
+          <span>${statusLine(person)}</span>
+        </div>
+      </div>
+      <div class="studio-status-row">
+        <div>
+          <p>Status</p>
+          <strong>${presence.label}</strong>
+          <span>Last online ${lastOnlineLabel(person)}</span>
+        </div>
+        <div class="range-toggle" aria-label="Timeline range">
+          <span>1h</span>
+          <strong>1d</strong>
+          <span>1w</span>
+        </div>
+      </div>
+      <div class="studio-stat-grid">
+        <div><span>Last Online</span><strong>${lastOnlineLabel(person)}</strong></div>
+        <div><span>Current Studio Time</span><strong>${currentStudioDuration(person)}</strong></div>
+        <div><span>Observed Changes</span><strong>${numberFormatter.format(timeline.length)}</strong></div>
+      </div>
+      <div class="studio-bar-card">
+        <h3>Status timeline</h3>
+        <div class="studio-bar" aria-label="Yellow means in Studio, gray means not in Studio">
+          <div class="studio-bar-track">${buildStudioSegments(timeline)}</div>
+        </div>
+        <div class="studio-ticks">${studioTicks()}</div>
+        <div class="studio-legend"><span><i class="studio-on"></i> In Studio</span><span><i class="studio-off"></i> Not in Studio</span></div>
+      </div>
+      <div class="studio-events">
+        ${timeline.length ? timeline.slice().reverse().map(personTimelineEntryMarkup).join("") : `<p class="empty-state">No observed status history yet.</p>`}
+      </div>
+    </section>
+  `;
+}
+
 function openTimeline(placeId) {
   const game = latestGames.find((entry) => String(entry.placeId) === String(placeId));
   if (!game) return;
 
   const timeline = [...(game.timeline || [])].reverse();
+  timelineDialog.classList.remove("studio-dialog");
   timelineEyebrow.textContent = "Observed game timeline";
   timelineTitle.textContent = game.displayName;
   timelineSubtitle.textContent = timeline.length
@@ -247,15 +364,11 @@ function openPersonTimeline(userId) {
   const person = latestPeople.find((entry) => String(entry.userId) === String(userId));
   if (!person) return;
 
-  const timeline = [...(person.timeline || [])].reverse();
-  timelineEyebrow.textContent = "Observed person timeline";
+  timelineDialog.classList.add("studio-dialog");
+  timelineEyebrow.textContent = "Studio tracker";
   timelineTitle.textContent = person.displayName || person.name;
-  timelineSubtitle.textContent = timeline.length
-    ? `${person.role} · ${numberFormatter.format(timeline.length)} observed ${pluralize(timeline.length, "status change")} since this server started tracking.`
-    : `${person.role} · No observed status history yet.`;
-  timelineList.innerHTML = timeline.length
-    ? timeline.map(personTimelineEntryMarkup).join("")
-    : `<p class="empty-state">No person timeline entries yet. Entries appear when this dashboard observes online, offline, game, or Studio changes.</p>`;
+  timelineSubtitle.textContent = statusLine(person);
+  timelineList.innerHTML = studioTrackerMarkup(person);
   timelineDialog.showModal();
 }
 
