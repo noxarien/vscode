@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FRI Live Status</title>
     <link rel="preconnect" href="https://tr.rbxcdn.com">
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
     <div class="shell">
       <header class="topbar">
-        <a class="brand" href="/" aria-label="FRI Live Status">
+        <a class="brand" href="./index.html" aria-label="FRI Live Status">
           <span class="brand-mark">F</span>
           <span>
             <strong>FRI Live Status</strong>
-            <small>Roblox operations board</small>
+            <small>Game support board</small>
           </span>
         </a>
         <div class="status-strip">
@@ -26,8 +26,8 @@
       <main>
         <section class="hero">
           <div>
-            <p class="eyebrow">Current network activity</p>
-            <h1>Games, people, and Studio presence.</h1>
+            <p class="eyebrow">Current support activity</p>
+            <h1>FRI game support and Studio presence.</h1>
           </div>
           <div class="hero-metrics" aria-live="polite">
             <div>
@@ -40,7 +40,7 @@
             </div>
             <div>
               <span id="onlineCount">--</span>
-              <small>online staff</small>
+              <small>support online</small>
             </div>
           </div>
         </section>
@@ -48,7 +48,7 @@
         <section class="section-header">
           <div>
             <p class="eyebrow">Experiences</p>
-            <h2>Live Roblox Games</h2>
+            <h2>Game Support Experiences</h2>
           </div>
           <button class="refresh-button" id="refreshButton" type="button">Refresh</button>
         </section>
@@ -56,11 +56,11 @@
 
         <section class="section-header people-header">
           <div>
-            <p class="eyebrow">Team</p>
-            <h2>Developer Presence</h2>
+            <p class="eyebrow">Support team</p>
+            <h2>Roles and Studio Time</h2>
           </div>
         </section>
-        <section class="people-grid" id="peopleGrid" aria-live="polite"></section>
+        <section id="peopleSections" aria-live="polite"></section>
       </main>
     </div>
 
@@ -77,7 +77,7 @@
           <h3></h3>
           <p class="roblox-name"></p>
           <div class="active-team">
-            <span>Team here</span>
+            <span>Support here</span>
             <div class="active-team-list"></div>
           </div>
           <dl class="game-meta">
@@ -114,6 +114,16 @@
       </article>
     </template>
 
-    <script src="/app.js" type="module"></script>
+    <template id="sectionTemplate">
+      <section class="people-section">
+        <div class="people-section-heading">
+          <h3></h3>
+          <p></p>
+        </div>
+        <div class="people-grid"></div>
+      </section>
+    </template>
+
+    <script src="./app.js" type="module"></script>
   </body>
 </html>

@@ -1,5 +1,5 @@
 const gamesGrid = document.querySelector("#gamesGrid");
-const peopleGrid = document.querySelector("#peopleGrid");
+const peopleSections = document.querySelector("#peopleSections");
 const totalPlaying = document.querySelector("#totalPlaying");
 const studioCount = document.querySelector("#studioCount");
 const onlineCount = document.querySelector("#onlineCount");
@@ -7,6 +7,8 @@ const refreshLabel = document.querySelector("#refreshLabel");
 const refreshButton = document.querySelector("#refreshButton");
 const gameTemplate = document.querySelector("#gameTemplate");
 const personTemplate = document.querySelector("#personTemplate");
+const sectionTemplate = document.querySelector("#sectionTemplate");
+const deployedApiOrigin = "https://vscode-mocha.vercel.app";
 
 const numberFormatter = new Intl.NumberFormat();
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -18,6 +20,35 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 });
 
 const relativeFormatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+const requestTimeoutMs = 12_000;
+
+function apiBaseUrl() {
+  if (window.location.protocol === "file:") {
+    return `${deployedApiOrigin}/api/dashboard`;
+  }
+
+  return new URL("/api/dashboard", window.location.href).toString();
+}
+
+async function fetchDashboardJson() {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), requestTimeoutMs);
+
+  try {
+    const response = await fetch(`${apiBaseUrl()}?time=${Date.now()}`, {
+      signal: controller.signal,
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(`Dashboard API failed: ${response.status}`);
+    }
+
+    return response.json();
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
 
 function relativeTime(dateValue) {
   if (!dateValue) return "Unknown";
@@ -47,8 +78,13 @@ function presenceDetails(type) {
 }
 
 function setLoading() {
-  gamesGrid.innerHTML = Array.from({ length: 12 }, () => `<article class="game-card skeleton"></article>`).join("");
-  peopleGrid.innerHTML = Array.from({ length: 9 }, () => `<article class="person-card skeleton"></article>`).join("");
+  gamesGrid.innerHTML = Array.from({ length: 6 }, () => `<article class="game-card skeleton"></article>`).join("");
+  peopleSections.innerHTML = Array.from({ length: 4 }, () => `
+    <section class="people-section">
+      <div class="people-section-heading skeleton"></div>
+      <div class="people-grid">${Array.from({ length: 3 }, () => `<article class="person-card skeleton"></article>`).join("")}</div>
+    </section>
+  `).join("");
 }
 
 function pluralize(count, singular, plural = `${singular}s`) {
@@ -108,24 +144,43 @@ function renderGames(games) {
   });
 }
 
-function renderPeople(staff) {
-  peopleGrid.innerHTML = "";
+function studioDurationLabel(person) {
+  if (!person.studioObservedStartedAt) {
+    return "Studio session just detected";
+  }
 
-  staff.forEach((person) => {
-    const presence = presenceDetails(person.presenceType);
-    const node = personTemplate.content.cloneNode(true);
-    const image = node.querySelector("img");
-    image.src = person.avatarUrl;
-    image.alt = `${person.name} Roblox avatar`;
-    node.querySelector("h3").textContent = person.name;
-    node.querySelector(".role").textContent = `${person.role} · @${person.robloxName}`;
-    node.querySelector(".location").textContent = person.locationDetail || "Offline";
-    const badge = node.querySelector(".presence-badge");
-    badge.textContent = presence.label;
-    badge.classList.add(presence.className);
-    const link = node.querySelector("a");
-    link.href = person.url;
-    peopleGrid.append(node);
+  return `Observed in Studio for ${relativeTime(person.studioObservedStartedAt).replace("ago", "").trim()}`;
+}
+
+function renderPeopleSections(sections) {
+  peopleSections.innerHTML = "";
+
+  sections.forEach((section) => {
+    const sectionNode = sectionTemplate.content.cloneNode(true);
+    sectionNode.querySelector("h3").textContent = section.name;
+    sectionNode.querySelector("p").textContent = `${numberFormatter.format(section.people.length)} ${pluralize(section.people.length, "person", "people")}`;
+    const grid = sectionNode.querySelector(".people-grid");
+
+    section.people.forEach((person) => {
+      const presence = presenceDetails(person.presenceType);
+      const node = personTemplate.content.cloneNode(true);
+      const image = node.querySelector("img");
+      image.src = person.avatarUrl;
+      image.alt = `${person.displayName || person.name} Roblox avatar`;
+      node.querySelector("h3").textContent = person.displayName || person.name;
+      node.querySelector(".role").textContent = `${person.role} · @${person.robloxName}`;
+      node.querySelector(".location").textContent = person.presenceType === 3
+        ? `${person.locationDetail} · ${studioDurationLabel(person)}`
+        : person.locationDetail || "Offline";
+      const badge = node.querySelector(".presence-badge");
+      badge.textContent = presence.label;
+      badge.classList.add(presence.className);
+      const link = node.querySelector("a");
+      link.href = person.url;
+      grid.append(node);
+    });
+
+    peopleSections.append(sectionNode);
   });
 }
 
@@ -135,9 +190,7 @@ async function loadDashboard({ showSkeleton = false } = {}) {
   refreshLabel.textContent = "Syncing Roblox";
 
   try {
-    const response = await fetch(`/api/dashboard?time=${Date.now()}`);
-    if (!response.ok) throw new Error("Dashboard API failed");
-    const data = await response.json();
+    const data = await fetchDashboardJson();
     const staffOnline = data.staff.filter((person) => person.presenceType > 0).length;
     const staffInStudio = data.staff.filter((person) => person.presenceType === 3).length;
 
@@ -145,11 +198,12 @@ async function loadDashboard({ showSkeleton = false } = {}) {
     studioCount.textContent = numberFormatter.format(staffInStudio);
     onlineCount.textContent = numberFormatter.format(staffOnline);
     renderGames(data.games);
-    renderPeople(data.staff);
+    renderPeopleSections(data.sections || []);
     refreshLabel.textContent = `Updated ${relativeTime(data.generatedAt)}`;
   } catch (error) {
     refreshLabel.textContent = "Roblox sync failed";
-    gamesGrid.innerHTML = `<p class="empty-state">Could not load Roblox data right now. Try refreshing in a moment.</p>`;
+    gamesGrid.innerHTML = `<p class="empty-state">Could not load Roblox data right now. If this page is opened as a file, the deployed API must allow CORS from ${deployedApiOrigin}. If you still see this after redeploying, the API request is timing out or being blocked.</p>`;
+    peopleSections.innerHTML = "";
   } finally {
     refreshButton.disabled = false;
   }
