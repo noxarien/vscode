@@ -144,33 +144,6 @@ function plainRelativeTime(dateValue) {
   return relativeTime(dateValue).replace("ago", "").trim();
 }
 
-function activeTeamMarkup(game) {
-  const staff = game.activeStaff || [];
-  const playing = Number(game.playing || 0);
-
-  if (!staff.length && playing > 0) {
-    return `<em>${numberFormatter.format(playing)} ${pluralize(playing, "person", "people")} playing right now. Roblox is not showing which tracked staff member it is.</em>`;
-  }
-
-  if (!staff.length) {
-    return `<em>No tracked team members confirmed here right now</em>`;
-  }
-
-  const staffMarkup = staff.map((person) => `
-    <a href="${person.profileUrl}" target="_blank" rel="noreferrer" title="${person.name} · ${person.role}">
-      <img src="${person.avatarUrl}" alt="${person.name}">
-      <span>${person.name}</span>
-    </a>
-  `).join("");
-
-  if (playing > staff.length) {
-    const extraPlayers = playing - staff.length;
-    return `${staffMarkup}<em>+ ${numberFormatter.format(extraPlayers)} other ${pluralize(extraPlayers, "player")} in this game</em>`;
-  }
-
-  return staffMarkup;
-}
-
 function renderGames(games) {
   latestGames = games;
   gamesGrid.innerHTML = "";
@@ -178,23 +151,12 @@ function renderGames(games) {
   games.forEach((game, index) => {
     const node = gameTemplate.content.cloneNode(true);
     const updatedDate = game.updated ? new Date(game.updated) : null;
-    const thumbnail = node.querySelector(".game-media img");
-    thumbnail.src = game.thumbnailUrl;
-    thumbnail.alt = `${game.displayName} Roblox thumbnail`;
     node.querySelector(".game-index").textContent = String(index + 1).padStart(2, "0");
-    node.querySelector(".player-pill strong").textContent = numberFormatter.format(game.playing || 0);
     node.querySelector("h3").textContent = game.displayName;
-    node.querySelector(".roblox-name").textContent = game.robloxName && game.robloxName !== game.displayName
-      ? `Roblox name: ${game.robloxName}`
-      : `By ${game.creator || "Roblox creator"}`;
     node.querySelector(".updated").innerHTML = updatedDate
       ? `<strong>${relativeTime(game.updated)}</strong><span>${dateFormatter.format(updatedDate)}</span>`
       : "<strong>Unknown</strong><span>No date returned</span>";
-    node.querySelector(".max-players").textContent = game.maxPlayers ? numberFormatter.format(game.maxPlayers) : "Unknown";
-    node.querySelector(".visits").textContent = numberFormatter.format(game.visits || 0);
-    node.querySelector(".active-team-list").innerHTML = activeTeamMarkup(game);
-    node.querySelector(".open-link").href = game.url;
-    node.querySelector(".timeline-hint").textContent = `${numberFormatter.format((game.timeline || []).length)} timeline ${pluralize((game.timeline || []).length, "entry", "entries")}`;
+    node.querySelector(".game-player-count").textContent = numberFormatter.format(game.playing || 0);
     const card = node.querySelector(".game-card");
     card.dataset.placeId = game.placeId;
     card.setAttribute("aria-label", `Open ${game.displayName} timeline`);
@@ -268,12 +230,20 @@ function lastOnlineLabel(person) {
   return lastOnline ? `${plainRelativeTime(lastOnline)} ago` : "Unknown";
 }
 
-function currentStudioDuration(person) {
-  const studioEntry = [...(person.timeline || [])].reverse().find((entry) => (
-    entry.presenceType === 3 && !entry.endedAt
-  ));
+function currentPresenceEntry(person) {
+  return [...(person.timeline || [])].reverse().find((entry) => !entry.endedAt) || null;
+}
 
-  return studioEntry ? elapsedLabel(studioEntry.startedAt) : "Not in Studio";
+function currentPresenceDuration(person) {
+  const entry = currentPresenceEntry(person);
+  return entry ? elapsedLabel(entry.startedAt) : "Not active";
+}
+
+function currentPresenceMetricLabel(person) {
+  if (person.presenceType === 3) return "Current Studio Time";
+  if (person.presenceType === 2) return "Current Game Time";
+  if (person.presenceType === 1) return "Current Online Time";
+  return "Current Status Time";
 }
 
 function buildStudioSegments(timeline, rangeKey) {
@@ -347,7 +317,7 @@ function studioTrackerMarkup(person, rangeKey = activeStudioRange) {
       </div>
       <div class="studio-stat-grid">
         <div><span>Last Online</span><strong>${lastOnlineLabel(person)}</strong></div>
-        <div><span>Current Studio Time</span><strong>${currentStudioDuration(person)}</strong></div>
+        <div><span>${currentPresenceMetricLabel(person)}</span><strong>${currentPresenceDuration(person)}</strong></div>
         <div><span>Observed Changes</span><strong>${numberFormatter.format(timeline.length)}</strong></div>
       </div>
       <div class="studio-bar-card">
@@ -397,12 +367,12 @@ function openPersonTimeline(userId) {
   timelineDialog.showModal();
 }
 
-function studioDurationLabel(person) {
-  if (!person.studioObservedStartedAt) {
-    return "Studio session just detected";
-  }
+function presenceDurationLabel(person) {
+  const entry = currentPresenceEntry(person);
+  if (!entry) return person.locationDetail || "Offline";
 
-  return `Observed in Studio for ${relativeTime(person.studioObservedStartedAt).replace("ago", "").trim()}`;
+  const presence = presenceDetails(person.presenceType);
+  return `${presence.label} for ${elapsedLabel(entry.startedAt)}`;
 }
 
 function renderPeopleSections(sections) {
@@ -423,8 +393,8 @@ function renderPeopleSections(sections) {
       image.alt = `${person.displayName || person.name} Roblox avatar`;
       node.querySelector("h3").textContent = person.displayName || person.name;
       node.querySelector(".role").textContent = `${person.role} · @${person.robloxName}`;
-      node.querySelector(".location").textContent = person.presenceType === 3
-        ? `${person.locationDetail} · ${studioDurationLabel(person)}`
+      node.querySelector(".location").textContent = person.presenceType > 0
+        ? presenceDurationLabel(person)
         : person.locationDetail || "Offline";
       const badge = node.querySelector(".presence-badge");
       badge.textContent = presence.label;

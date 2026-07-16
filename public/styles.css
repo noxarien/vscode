@@ -1444,6 +1444,68 @@ h2 {
     #0b0c0e;
 }
 
+.game-card {
+  min-height: 142px;
+}
+
+.game-body {
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.game-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.game-heading .game-index {
+  position: static;
+  flex: 0 0 auto;
+}
+
+.game-heading h3 {
+  min-width: 0;
+  margin: 0;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.game-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(88px, 0.7fr);
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.game-summary > div {
+  min-width: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.game-summary span,
+.game-summary .updated span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.game-summary .updated > strong,
+.game-player-count {
+  display: block;
+  margin-top: 4px;
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.game-summary .updated > span {
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 900px) {
   .people-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

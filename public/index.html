@@ -80,36 +80,21 @@
 
     <template id="gameTemplate">
       <article class="game-card" tabindex="0" role="button" aria-label="Open game timeline">
-        <div class="game-media">
-          <img alt="" width="512" height="512">
-          <span class="game-index"></span>
-        </div>
         <div class="game-body">
-          <div class="game-topline">
-            <span class="player-pill"><strong></strong> online</span>
+          <div class="game-heading">
+            <span class="game-index"></span>
+            <h3></h3>
           </div>
-          <h3></h3>
-          <p class="roblox-name"></p>
-          <div class="active-team">
-            <span>Support here</span>
-            <div class="active-team-list"></div>
+          <div class="game-summary">
+            <div>
+              <span>Last updated</span>
+              <div class="updated"></div>
+            </div>
+            <div>
+              <span>Playing now</span>
+              <strong class="game-player-count"></strong>
+            </div>
           </div>
-          <p class="timeline-hint">Click for timeline</p>
-          <dl class="game-meta">
-            <div>
-              <dt>Last updated</dt>
-              <dd class="updated"></dd>
-            </div>
-            <div>
-              <dt>Max server</dt>
-              <dd class="max-players"></dd>
-            </div>
-            <div>
-              <dt>Visits</dt>
-              <dd class="visits"></dd>
-            </div>
-          </dl>
-          <a class="open-link" target="_blank" rel="noreferrer">Open on Roblox</a>
         </div>
       </article>
     </template>
