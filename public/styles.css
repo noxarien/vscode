@@ -1927,6 +1927,43 @@ h1 {
   background: #626975;
 }
 
+.timeline-studio {
+  background: #f0b84b;
+}
+
+.timeline-ingame {
+  background: #59d49d;
+}
+
+.timeline-online {
+  background: #57b8ff;
+}
+
+.timeline-offline {
+  background: #626975;
+}
+
+.timeline-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 16px;
+  margin-top: 12px;
+  color: #8e96a3;
+  font-size: 0.72rem;
+}
+
+.timeline-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timeline-legend i {
+  width: 16px;
+  height: 5px;
+  border-radius: 2px;
+}
+
 .timeline-tooltip {
   position: fixed;
   z-index: 1000;

@@ -265,8 +265,9 @@ function buildStudioSegments(timeline, rangeKey) {
     const left = ((start - windowStart) / (now - windowStart)) * 100;
     const width = Math.max(((end - start) / (now - windowStart)) * 100, 0.8);
     const visibleLeft = Math.min(left, 100 - width);
-    const className = entry.presenceType === 3 ? "studio-on" : "studio-off";
-    const label = entry.presenceType === 3 ? "In Studio" : "Not in Studio";
+    const segmentPresence = presenceDetails(entry.presenceType);
+    const className = `timeline-${segmentPresence.className}`;
+    const label = segmentPresence.label;
     const exactStart = dateFormatter.format(new Date(entry.startedAt));
     const exactEnd = entry.endedAt
       ? dateFormatter.format(new Date(entry.endedAt))
@@ -342,11 +343,17 @@ function studioTrackerMarkup(person, rangeKey = activeStudioRange) {
       </div>
       <div class="studio-bar-card">
         <h3>Status timeline</h3>
-        <div class="studio-chart-surface" aria-label="Yellow means in Studio, gray means not in Studio">
+        <div class="studio-chart-surface" aria-label="Observed Roblox status over time">
           <div class="studio-bar">
             <div class="studio-bar-track">${buildStudioSegments(timeline, rangeKey)}</div>
           </div>
           <div class="studio-ticks">${studioTicks(rangeKey)}</div>
+        </div>
+        <div class="timeline-legend" aria-label="Timeline colors">
+          <span><i class="timeline-studio"></i>Studio</span>
+          <span><i class="timeline-ingame"></i>In Game</span>
+          <span><i class="timeline-online"></i>Online</span>
+          <span><i class="timeline-offline"></i>Offline</span>
         </div>
       </div>
       <div class="studio-events">
