@@ -14,7 +14,6 @@ const timelineTitle = document.querySelector("#timelineTitle");
 const timelineSubtitle = document.querySelector("#timelineSubtitle");
 const timelineList = document.querySelector("#timelineList");
 const timelineClose = document.querySelector("#timelineClose");
-const timelineTooltip = document.querySelector("#timelineTooltip");
 const deployedApiOrigin = "https://vscode-mocha.vercel.app";
 let latestGames = [];
 let latestPeople = [];
@@ -265,6 +264,11 @@ function buildStudioSegments(timeline, rangeKey) {
     const left = ((start - windowStart) / (now - windowStart)) * 100;
     const width = Math.max(((end - start) / (now - windowStart)) * 100, 0.8);
     const visibleLeft = Math.min(left, 100 - width);
+    const tooltipClass = visibleLeft > 65
+      ? "tooltip-right"
+      : visibleLeft < 35
+        ? "tooltip-left"
+        : "tooltip-center";
     const segmentPresence = presenceDetails(entry.presenceType);
     const className = `timeline-${segmentPresence.className}`;
     const label = segmentPresence.label;
@@ -274,22 +278,8 @@ function buildStudioSegments(timeline, rangeKey) {
       : `Active now (${dateFormatter.format(new Date())})`;
     const tooltip = `${label}\nStart: ${exactStart}\nEnd: ${exactEnd}\nDuration: ${elapsedLabel(entry.startedAt, entry.endedAt || new Date().toISOString())}`;
 
-    return `<span class="${className}" style="left:${visibleLeft}%;width:${width}%;" data-tooltip="${tooltip}" title="${tooltip.replaceAll("\n", " | ")}" aria-label="${label}, ${exactStart} to ${exactEnd}"></span>`;
+    return `<span class="${className} ${tooltipClass}" tabindex="0" style="left:${visibleLeft}%;width:${width}%;" data-tooltip="${tooltip}" title="${tooltip.replaceAll("\n", " | ")}" aria-label="${label}, ${exactStart} to ${exactEnd}"></span>`;
   }).join("");
-}
-
-function positionTimelineTooltip(event) {
-  if (timelineTooltip.hidden) return;
-
-  const gap = 14;
-  const maxLeft = window.innerWidth - timelineTooltip.offsetWidth - 12;
-  const maxTop = window.innerHeight - timelineTooltip.offsetHeight - 12;
-  timelineTooltip.style.left = `${Math.max(12, Math.min(event.clientX + gap, maxLeft))}px`;
-  timelineTooltip.style.top = `${Math.max(12, Math.min(event.clientY + gap, maxTop))}px`;
-}
-
-function hideTimelineTooltip() {
-  timelineTooltip.hidden = true;
 }
 
 function studioTicks(rangeKey) {
@@ -465,22 +455,6 @@ async function loadDashboard({ showSkeleton = false } = {}) {
 
 refreshButton.addEventListener("click", () => loadDashboard());
 timelineClose.addEventListener("click", () => timelineDialog.close());
-timelineDialog.addEventListener("close", hideTimelineTooltip);
-timelineList.addEventListener("mouseover", (event) => {
-  const segment = event.target.closest(".studio-bar-track > span[data-tooltip]");
-  if (!segment) return;
-
-  timelineTooltip.textContent = segment.dataset.tooltip;
-  timelineTooltip.hidden = false;
-  positionTimelineTooltip(event);
-});
-timelineList.addEventListener("mousemove", positionTimelineTooltip);
-timelineList.addEventListener("mouseout", (event) => {
-  const segment = event.target.closest(".studio-bar-track > span[data-tooltip]");
-  if (segment && !segment.contains(event.relatedTarget)) {
-    hideTimelineTooltip();
-  }
-});
 timelineDialog.addEventListener("click", (event) => {
   const rangeButton = event.target.closest("[data-studio-range]");
   if (rangeButton) {

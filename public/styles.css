@@ -1964,25 +1964,44 @@ h1 {
   border-radius: 2px;
 }
 
-.timeline-tooltip {
-  position: fixed;
-  z-index: 1000;
+.studio-bar-track > span::after {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  z-index: 30;
+  display: none;
   width: max-content;
-  max-width: min(320px, calc(100vw - 24px));
-  padding: 10px 12px;
+  max-width: min(290px, calc(100vw - 48px));
+  padding: 9px 11px;
   border: 1px solid #59616d;
   border-radius: 4px;
   background: #080a0d;
   color: #f5f7fa;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.42);
-  font-size: 0.76rem;
-  line-height: 1.55;
+  content: attr(data-tooltip);
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.5;
   pointer-events: none;
   white-space: pre-line;
 }
 
-.timeline-tooltip[hidden] {
-  display: none;
+.studio-bar-track > span:hover::after,
+.studio-bar-track > span:focus::after,
+.studio-bar-track > span:focus-visible::after {
+  display: block;
+}
+
+.studio-bar-track > span.tooltip-left::after {
+  left: 0;
+}
+
+.studio-bar-track > span.tooltip-center::after {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.studio-bar-track > span.tooltip-right::after {
+  right: 0;
 }
 
 @media (max-width: 1100px) {
