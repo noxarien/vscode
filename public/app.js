@@ -15,6 +15,8 @@ const timelineSubtitle = document.querySelector("#timelineSubtitle");
 const timelineList = document.querySelector("#timelineList");
 const timelineClose = document.querySelector("#timelineClose");
 const deployedApiOrigin = "https://vscode-mocha.vercel.app";
+const presenceStorageKey = "fri-observed-presence-v1";
+const maxStoredTimelineEntries = 120;
 let latestGames = [];
 let latestPeople = [];
 let activeStudioUserId = null;
@@ -102,6 +104,103 @@ function presenceDetails(type) {
   if (type === 2) return { label: "In Game", className: "ingame" };
   if (type === 1) return { label: "Online", className: "online" };
   return { label: "Offline", className: "offline" };
+}
+
+function personStateKey(person) {
+  return [
+    person.presenceType,
+    person.activeGamePlaceId || "",
+    person.activeUniverseId || "",
+    person.locationDetail || ""
+  ].join(":");
+}
+
+function readPresenceHistory() {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(presenceStorageKey) || "{}");
+    return stored && typeof stored === "object" ? stored : {};
+  } catch {
+    return {};
+  }
+}
+
+function writePresenceHistory(history) {
+  try {
+    window.localStorage.setItem(presenceStorageKey, JSON.stringify(history));
+  } catch {
+    // Tracking still works for the current page when browser storage is unavailable.
+  }
+}
+
+function mergePersistedPresence(data) {
+  const now = new Date().toISOString();
+  const history = readPresenceHistory();
+  const activeUserIds = new Set(data.staff.map((person) => String(person.userId)));
+  const timelinesByUser = new Map();
+
+  for (const storedUserId of Object.keys(history)) {
+    if (!activeUserIds.has(storedUserId)) {
+      delete history[storedUserId];
+    }
+  }
+
+  for (const person of data.staff) {
+    const userId = String(person.userId);
+    const serverTimeline = Array.isArray(person.timeline) ? person.timeline : [];
+    const savedTimeline = Array.isArray(history[userId]?.timeline)
+      ? history[userId].timeline
+      : serverTimeline;
+    const timeline = savedTimeline.map((entry) => ({ ...entry }));
+    const stateKey = personStateKey(person);
+    let activeEntry = [...timeline].reverse().find((entry) => !entry.endedAt) || null;
+    const serverActiveEntry = [...serverTimeline].reverse().find((entry) => !entry.endedAt && (
+      entry.stateKey === stateKey || (
+        entry.presenceType === person.presenceType && entry.detail === person.locationDetail
+      )
+    ));
+
+    if (activeEntry?.stateKey === stateKey) {
+      if (serverActiveEntry && new Date(serverActiveEntry.startedAt) < new Date(activeEntry.startedAt)) {
+        activeEntry.startedAt = serverActiveEntry.startedAt;
+      }
+      activeEntry.lastSeenAt = now;
+      activeEntry.detail = person.locationDetail;
+    } else {
+      if (activeEntry) {
+        activeEntry.endedAt = now;
+        activeEntry.lastSeenAt = now;
+      }
+
+      activeEntry = {
+        userId: person.userId,
+        label: presenceDetails(person.presenceType).label,
+        detail: person.locationDetail,
+        startedAt: serverActiveEntry?.startedAt || now,
+        lastSeenAt: now,
+        endedAt: null,
+        presenceType: person.presenceType,
+        stateKey
+      };
+      timeline.push(activeEntry);
+    }
+
+    const trimmedTimeline = timeline.slice(-maxStoredTimelineEntries);
+    person.timeline = trimmedTimeline;
+    person.studioObservedStartedAt = person.presenceType === 3 ? activeEntry.startedAt : null;
+    timelinesByUser.set(userId, trimmedTimeline);
+    history[userId] = { timeline: trimmedTimeline, lastSeenAt: now };
+  }
+
+  for (const section of data.sections || []) {
+    for (const person of section.people || []) {
+      person.timeline = timelinesByUser.get(String(person.userId)) || person.timeline || [];
+      const activeEntry = [...person.timeline].reverse().find((entry) => !entry.endedAt);
+      person.studioObservedStartedAt = person.presenceType === 3 ? activeEntry?.startedAt || null : null;
+    }
+  }
+
+  writePresenceHistory(history);
+  return data;
 }
 
 function setLoading() {
@@ -434,7 +533,7 @@ async function loadDashboard({ showSkeleton = false } = {}) {
   refreshLabel.textContent = "Syncing Roblox";
 
   try {
-    const data = await fetchDashboardJson();
+    const data = mergePersistedPresence(await fetchDashboardJson());
     const staffOnline = data.staff.filter((person) => person.presenceType > 0).length;
     const staffInStudio = data.staff.filter((person) => person.presenceType === 3).length;
 
