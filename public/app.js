@@ -3,6 +3,8 @@ const peopleSections = document.querySelector("#peopleSections");
 const totalPlaying = document.querySelector("#totalPlaying");
 const studioCount = document.querySelector("#studioCount");
 const onlineCount = document.querySelector("#onlineCount");
+const experienceCount = document.querySelector("#experienceCount");
+const activeGameCount = document.querySelector("#activeGameCount");
 const refreshLabel = document.querySelector("#refreshLabel");
 const refreshButton = document.querySelector("#refreshButton");
 const gameTemplate = document.querySelector("#gameTemplate");
@@ -208,14 +210,16 @@ function mergePersistedPresence(data) {
 }
 
 function setLoading() {
-  const gameCount = trackerKey === "erlc" ? 9 : 6;
+  const gameCount = trackerKey === "erlc" ? 16 : 6;
   gamesGrid.innerHTML = Array.from({ length: gameCount }, () => `<article class="game-card skeleton"></article>`).join("");
-  peopleSections.innerHTML = Array.from({ length: 4 }, () => `
-    <section class="people-section">
-      <div class="people-section-heading skeleton"></div>
-      <div class="people-grid">${Array.from({ length: 3 }, () => `<article class="person-card skeleton"></article>`).join("")}</div>
-    </section>
-  `).join("");
+  if (peopleSections) {
+    peopleSections.innerHTML = Array.from({ length: 4 }, () => `
+      <section class="people-section">
+        <div class="people-section-heading skeleton"></div>
+        <div class="people-grid">${Array.from({ length: 3 }, () => `<article class="person-card skeleton"></article>`).join("")}</div>
+      </section>
+    `).join("");
+  }
 }
 
 function pluralize(count, singular, plural = `${singular}s`) {
@@ -498,6 +502,8 @@ function presenceDurationLabel(person) {
 
 function renderPeopleSections(sections) {
   latestPeople = sections.flatMap((section) => section.people || []);
+  if (!peopleSections) return;
+
   peopleSections.innerHTML = "";
 
   sections.forEach((section) => {
@@ -543,15 +549,21 @@ async function loadDashboard({ showSkeleton = false } = {}) {
     const staffInStudio = data.staff.filter((person) => person.presenceType === 3).length;
 
     totalPlaying.textContent = numberFormatter.format(data.totalPlaying);
-    studioCount.textContent = numberFormatter.format(staffInStudio);
-    onlineCount.textContent = numberFormatter.format(staffOnline);
+    if (studioCount) studioCount.textContent = numberFormatter.format(staffInStudio);
+    if (onlineCount) onlineCount.textContent = numberFormatter.format(staffOnline);
+    if (experienceCount) experienceCount.textContent = numberFormatter.format(data.games.length);
+    if (activeGameCount) {
+      activeGameCount.textContent = numberFormatter.format(
+        data.games.filter((game) => Number(game.playing || 0) > 0).length
+      );
+    }
     renderGames(data.games);
     renderPeopleSections(data.sections || []);
     refreshLabel.textContent = `Updated ${relativeTime(data.generatedAt)}`;
   } catch (error) {
     refreshLabel.textContent = "Roblox sync failed";
     gamesGrid.innerHTML = `<p class="empty-state">Could not load Roblox data right now. If this page is opened as a file, the deployed API must allow CORS from ${deployedApiOrigin}. If you still see this after redeploying, the API request is timing out or being blocked.</p>`;
-    peopleSections.innerHTML = "";
+    if (peopleSections) peopleSections.innerHTML = "";
   } finally {
     refreshButton.disabled = false;
   }
@@ -595,26 +607,28 @@ gamesGrid.addEventListener("keydown", (event) => {
     openTimeline(card.dataset.placeId);
   }
 });
-peopleSections.addEventListener("click", (event) => {
-  if (event.target.closest("a")) {
-    return;
-  }
+if (peopleSections) {
+  peopleSections.addEventListener("click", (event) => {
+    if (event.target.closest("a")) {
+      return;
+    }
 
-  const card = event.target.closest(".person-card");
-  if (card) {
-    openPersonTimeline(card.dataset.userId);
-  }
-});
-peopleSections.addEventListener("keydown", (event) => {
-  if (event.key !== "Enter" && event.key !== " ") {
-    return;
-  }
+    const card = event.target.closest(".person-card");
+    if (card) {
+      openPersonTimeline(card.dataset.userId);
+    }
+  });
+  peopleSections.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
 
-  const card = event.target.closest(".person-card");
-  if (card) {
-    event.preventDefault();
-    openPersonTimeline(card.dataset.userId);
-  }
-});
+    const card = event.target.closest(".person-card");
+    if (card) {
+      event.preventDefault();
+      openPersonTimeline(card.dataset.userId);
+    }
+  });
+}
 loadDashboard({ showSkeleton: true });
 setInterval(loadDashboard, 60_000);

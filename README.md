@@ -12,7 +12,7 @@ Open http://localhost:3000.
 
 The dashboard refreshes from Roblox every minute in the browser. The local API caches Roblox responses for 30 seconds so quick refreshes stay smooth.
 
-The Current Tracker keeps the original six FRI experiences. The separate ER:LC Tracker page tracks nine private development and testing experiences, and the header switch moves between the two boards.
+The Current Tracker keeps the original six FRI experiences and its ranked team presence board. The separate game-only ER:LC Tracker page tracks 16 private development and testing experiences, and the header switch moves between the two boards.
 
 ## Deploy
 
