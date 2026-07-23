@@ -49,7 +49,10 @@ async function serveStatic(request, response) {
 const server = createServer(async (request, response) => {
   try {
     if (request.url?.startsWith("/api/dashboard")) {
-      sendJson(response, 200, await buildDashboard());
+      const requestUrl = new URL(request.url, `http://${request.headers.host}`);
+      sendJson(response, 200, await buildDashboard({
+        tracker: requestUrl.searchParams.get("tracker") || "current"
+      }));
       return;
     }
 

@@ -11,8 +11,11 @@ export default async function handler(request, response) {
   }
 
   try {
+    const tracker = Array.isArray(request.query?.tracker)
+      ? request.query.tracker[0]
+      : request.query?.tracker;
     response.setHeader("cache-control", "s-maxage=30, stale-while-revalidate=30");
-    response.status(200).json(await buildDashboard());
+    response.status(200).json(await buildDashboard({ tracker }));
   } catch (error) {
     response.status(500).json({ error: error.message || "Unexpected server error" });
   }

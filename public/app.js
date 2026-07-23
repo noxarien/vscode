@@ -15,7 +15,8 @@ const timelineSubtitle = document.querySelector("#timelineSubtitle");
 const timelineList = document.querySelector("#timelineList");
 const timelineClose = document.querySelector("#timelineClose");
 const deployedApiOrigin = "https://vscode-mocha.vercel.app";
-const presenceStorageKey = "fri-observed-presence-v1";
+const trackerKey = document.body.dataset.tracker || "current";
+const presenceStorageKey = `fri-observed-presence-${trackerKey}-v1`;
 const maxStoredTimelineEntries = 120;
 let latestGames = [];
 let latestPeople = [];
@@ -64,7 +65,10 @@ async function fetchDashboardJson() {
   const timeoutId = window.setTimeout(() => controller.abort(), requestTimeoutMs);
 
   try {
-    const response = await fetch(`${apiBaseUrl()}?time=${Date.now()}`, {
+    const requestUrl = new URL(apiBaseUrl());
+    requestUrl.searchParams.set("tracker", trackerKey);
+    requestUrl.searchParams.set("time", Date.now());
+    const response = await fetch(requestUrl, {
       signal: controller.signal,
       cache: "no-store"
     });
@@ -204,7 +208,8 @@ function mergePersistedPresence(data) {
 }
 
 function setLoading() {
-  gamesGrid.innerHTML = Array.from({ length: 6 }, () => `<article class="game-card skeleton"></article>`).join("");
+  const gameCount = trackerKey === "erlc" ? 9 : 6;
+  gamesGrid.innerHTML = Array.from({ length: gameCount }, () => `<article class="game-card skeleton"></article>`).join("");
   peopleSections.innerHTML = Array.from({ length: 4 }, () => `
     <section class="people-section">
       <div class="people-section-heading skeleton"></div>
